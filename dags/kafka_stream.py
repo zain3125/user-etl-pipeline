@@ -32,3 +32,22 @@ def format_data(user_data):
     data['picture'] = user_data['picture']['medium']
 
     return data
+
+# print(format_data(get_data()))
+
+def stream_data():
+    # Create kafka producer, connect to server, and max waiting 5s
+    producer = KafkaProducer(bootstrap_server=['broker:29092'], max_block_ms=5000)
+
+    # Send data for one minute
+    curr_time = time.time()
+    while True:
+        if time.time() > curr_time + 60:
+            break
+        try:
+            user_data = (format_data(get_data()))
+            
+            producer.send('user_created', json.dumps(user_data).encode('utf-8'))
+        except Exception as e:
+            logging.error(f"error: {e}")
+            continue
