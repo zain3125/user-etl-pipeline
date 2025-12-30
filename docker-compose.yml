@@ -2,7 +2,7 @@ services:
   # Airflow
   airflow-webserver:
     image: apache/airflow:2.6.0-python3.9
-    command: aiflow-web-server
+    command: webserver
     entrypoint: ['/opt/airflow/script/entrypoint.sh']
     depends_on:
       - postgres
