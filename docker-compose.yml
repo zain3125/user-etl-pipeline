@@ -1,7 +1,7 @@
 services:
   # Airflow
   airflow-webserver:
-    image: apache/airflow:2.6.0-python3.9
+    build: .
     command: webserver
     entrypoint: ['/opt/airflow/script/entrypoint.sh']
     depends_on:
@@ -22,15 +22,17 @@ services:
     ports:
       - "8080:8080"
     healthcheck:
-      test: ['CMD-SHELL', "[ -f /opt/airflow/airflow-webserver.pid ]"]
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
-      timeout: 30s
-      retries: 3
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     networks:
       - confluent
 
   airflow-scheduler:
-    image: apache/airflow:2.6.0-python3.9
+    build: .
+    entrypoint: ['/opt/airflow/script/entrypoint.sh']
     depends_on:
       airflow-webserver:
         condition: service_healthy
@@ -43,7 +45,7 @@ services:
       - EXECUTOR=Sequential
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
-    command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler"
+    command: scheduler
     networks:
       - confluent
 
