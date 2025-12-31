@@ -117,20 +117,27 @@ services:
       retries: 5
 
   spark-master:
-    image: apache/spark:3.4.1
-    container_name: spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
-    ports:
-      - "9090:8080"
-      - "7077:7077"
-    volumes:
-    - ./data:/data
-    networks:
-      - confluent
+      image: apache/spark:3.4.1
+      container_name: spark-master
+      user: root
+      environment:
+        - SPARK_MASTER_HOST=spark-master
+      entrypoint: ["/opt/spark/script/spark_master_entrypoint.sh"]
+      ports:
+        - "9090:8080"
+        - "7077:7077"
+      volumes:
+        - ./data:/data
+        - ./spark_stream.py:/opt/spark/spark_stream.py
+        - ./script:/opt/spark/script
+      networks:
+        - confluent
+
   spark-worker:
     image: apache/spark:3.4.1
     container_name: spark-worker
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    user: root
+    entrypoint: ["/opt/spark/script/spark_worker_entrypoint.sh"]
     depends_on:
       - spark-master
     environment:
@@ -139,7 +146,8 @@ services:
       SPARK_WORKER_MEMORY: 1g
       SPARK_MASTER_URL: spark://spark-master:7077
     volumes:
-    - ./data:/data
+      - ./data:/data
+      - ./script:/opt/spark/script
     networks:
       - confluent
 
